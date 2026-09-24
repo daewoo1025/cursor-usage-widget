@@ -35,3 +35,6 @@ Desktop.ini
 _tmp*
 *.log
 *.zip
+
+# Push separately after 'gh auth refresh -s workflow'
+.github/workflows/
