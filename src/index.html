@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cursor Pro+ Glass Widget</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        :root {
+            --glass-opacity: 0.18;
+            --glass-blur: 22px;
+            --bg-r: 12; --bg-g: 16; --bg-b: 28;
+            --border-color: #94a3b8;
+            --border-alpha: 0.28;
+            --border: rgba(148, 163, 184, 0.28);
+            --scroll-thumb: rgba(148, 163, 184, 0.45);
+            --text-main: #f1f5f9;
+            --text-sub: #94a3b8;
+            --text-accent: #38bdf8;
+            --bar-bg: rgba(148, 163, 184, 0.18);
+            --bar-cursor: #38bdf8;
+            --bar-other: #818cf8;
+            --bar-grok: #34d399;
+            --btn-hover: rgba(255, 255, 255, 0.1);
+            --chart-grid: rgba(148, 163, 184, 0.14);
+            --spend-bg: rgba(239, 68, 68, 0.22);
+            --spend-text: #fca5a5;
+            --surface: rgba(0, 0, 0, 0.22);
+            --inset-glow: transparent;
+        }
+
+        /* Midnight — deep slate glass */
+        [data-theme="dark"] {
+            --bg-r: 12; --bg-g: 16; --bg-b: 28;
+            --border-color: #94a3b8;
+            --border-alpha: 0.28;
+            --scroll-thumb: rgba(148, 163, 184, 0.45);
+            --text-main: #f1f5f9;
+            --text-sub: #94a3b8;
+            --text-accent: #38bdf8;
+            --bar-bg: rgba(148, 163, 184, 0.18);
+            --bar-cursor: #38bdf8;
+            --bar-other: #818cf8;
+            --bar-grok: #34d399;
+            --btn-hover: rgba(255, 255, 255, 0.1);
+            --chart-grid: rgba(148, 163, 184, 0.14);
+            --spend-bg: rgba(239, 68, 68, 0.22);
+            --spend-text: #fca5a5;
+            --surface: rgba(0, 0, 0, 0.25);
+            --inset-glow: transparent;
+        }
+
+        /* Mist — soft frosted daylight (not harsh white) */
+        [data-theme="light"] {
+            --bg-r: 226; --bg-g: 232; --bg-b: 240;
+            --border-color: #64748b;
+            --border-alpha: 0.35;
+            --scroll-thumb: rgba(100, 116, 139, 0.4);
+            --text-main: #0f172a;
+            --text-sub: #475569;
+            --text-accent: #0e7490;
+            --bar-bg: rgba(15, 23, 42, 0.1);
+            --bar-cursor: #0e7490;
+            --bar-other: #4f46e5;
+            --bar-grok: #047857;
+            --btn-hover: rgba(15, 23, 42, 0.08);
+            --chart-grid: rgba(71, 85, 105, 0.16);
+            --spend-bg: rgba(220, 38, 38, 0.12);
+            --spend-text: #b91c1c;
+            --surface: rgba(255, 255, 255, 0.35);
+            --inset-glow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+        }
+
+        /* Neon — cyber look without outer glow (avoids square window edges) */
+        [data-theme="cyberpunk"] {
+            --bg-r: 8; --bg-g: 6; --bg-b: 18;
+            --border-color: #fb7185;
+            --border-alpha: 0.55;
+            --scroll-thumb: rgba(251, 113, 133, 0.5);
+            --text-main: #fff1f2;
+            --text-sub: #a5b4fc;
+            --text-accent: #fb7185;
+            --bar-bg: rgba(251, 113, 133, 0.18);
+            --bar-cursor: #fb7185;
+            --bar-other: #22d3ee;
+            --bar-grok: #facc15;
+            --btn-hover: rgba(251, 113, 133, 0.22);
+            --chart-grid: rgba(251, 113, 133, 0.16);
+            --spend-bg: rgba(244, 63, 94, 0.28);
+            --spend-text: #fda4af;
+            --surface: rgba(0, 0, 0, 0.35);
+            --inset-glow: inset 0 0 0 1px rgba(34, 211, 238, 0.12);
+        }
+
+        /* Forest — muted green glass */
+        [data-theme="forest"] {
+            --bg-r: 10; --bg-g: 22; --bg-b: 18;
+            --border-color: #6ee7b7;
+            --border-alpha: 0.3;
+            --scroll-thumb: rgba(110, 231, 183, 0.4);
+            --text-main: #ecfdf5;
+            --text-sub: #a7f3d0;
+            --text-accent: #34d399;
+            --bar-bg: rgba(52, 211, 153, 0.16);
+            --bar-cursor: #34d399;
+            --bar-other: #5eead4;
+            --bar-grok: #fbbf24;
+            --btn-hover: rgba(52, 211, 153, 0.18);
+            --chart-grid: rgba(110, 231, 183, 0.14);
+            --spend-bg: rgba(239, 68, 68, 0.22);
+            --spend-text: #fca5a5;
+            --surface: rgba(0, 0, 0, 0.28);
+            --inset-glow: transparent;
+        }
+
+        html, body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            color: var(--text-main);
+            background: transparent !important;
+            background-color: rgba(0, 0, 0, 0) !important;
+            user-select: none;
+        }
+
+        .widget {
+            /* Inset from OS window so rounded corners never flash square edges */
+            margin: 3px;
+            width: calc(100% - 6px);
+            height: calc(100% - 6px);
+            background-color: rgba(var(--bg-r), var(--bg-g), var(--bg-b), var(--glass-opacity)) !important;
+            backdrop-filter: blur(var(--glass-blur)) !important;
+            -webkit-backdrop-filter: blur(var(--glass-blur)) !important;
+            border: 1px solid var(--border);
+            /* No outer box-shadow — it paints the rectangular window bounds on transparent glass */
+            box-shadow: var(--inset-glow);
+            border-radius: 18px;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.15s ease, border-color 0.15s ease, backdrop-filter 0.15s ease;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        .drag-area { cursor: grab; }
+        .drag-area:active { cursor: grabbing; }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 4px; }
+        
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus { outline: none; }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 3px;
+            background: var(--border);
+            border-radius: 2px;
+            cursor: pointer;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 14px;
+            width: 14px;
+            border-radius: 50%;
+            background: var(--text-main);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -5px; 
+            box-shadow: none;
+            transition: transform 0.15s ease;
+        }
+        input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.25); }
+
+        .icon-btn {
+            color: var(--text-sub);
+            padding: 6px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            cursor: pointer;
+            position: relative;
+            z-index: 50;
+        }
+        .icon-btn:hover, .icon-btn.active-icon { color: var(--text-main); background-color: var(--btn-hover); }
+        .icon-btn.locked-active { color: #f43f5e; background-color: rgba(244, 63, 94, 0.25); }
+
+        .view-container {
+            display: none !important;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+            background: transparent !important;
+        }
+        .view-container.active { 
+            display: flex !important; 
+        }
+
+        .bar-track { background-color: var(--bar-bg); height: 5px; border-radius: 99px; overflow: hidden; }
+        .bar-fill { height: 100%; border-radius: 99px; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        .pill-btn {
+            font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 12px;
+            color: var(--text-sub); cursor: pointer; transition: all 0.2s;
+            position: relative; z-index: 50;
+        }
+        .pill-btn.active { background-color: var(--bar-bg); color: var(--text-main); }
+        .pill-btn:hover:not(.active) { color: var(--text-main); }
+    </style>
+</head>
+<body>
+
+    <div id="widget" class="widget" title="Double click anywhere to refresh stats">
+        <!-- Header area -->
+        <div id="drag-header" class="drag-area flex justify-between items-center px-4 py-2.5 border-b shrink-0" style="border-color: var(--border);">
+            <div class="flex items-center gap-2 pointer-events-none">
+                <div class="w-2.5 h-2.5 rounded-full bg-[var(--text-accent)] shadow-[0_0_10px_var(--text-accent)]"></div>
+                <span id="user-display" class="text-xs font-bold tracking-wide" style="color: var(--text-main);">dev.wizard</span>
+                <span id="plan-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full border shadow-sm" style="color: var(--text-accent); border-color: var(--text-accent); background: rgba(56, 189, 248, 0.2);">Pro+</span>
+            </div>
+            
+            <!-- Navigation Icons -->
+            <div class="flex items-center gap-1">
+                <button id="btn-lock" class="icon-btn" title="Lock Position / Dragging">
+                    <svg id="icon-unlocked" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+                    <svg id="icon-locked" class="hidden" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                </button>
+
+                <button id="btn-toggle-main" class="icon-btn" title="View Stats / Analytics">
+                    <svg id="icon-svg-stats" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                    <svg id="icon-svg-home" class="hidden" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                </button>
+
+                <button id="btn-settings" class="icon-btn" title="Settings Panel">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="flex-1 w-full overflow-hidden relative p-1">
+            
+            <!-- VIEW 1: OVERVIEW / HOME (BALANCED PADDING, NO SCROLLBAR) -->
+            <div id="view-overview" class="view-container active px-4 pt-3 pb-4 gap-3 overflow-hidden">
+                <div class="flex justify-between items-center text-[11px]" style="color: var(--text-sub);">
+                    <span>Reset Date: <strong id="reset-date-txt" style="color: var(--text-main);">End of Month</strong></span>
+                    <span id="sync-status" class="text-[10px] text-emerald-400 font-mono" title="Sync Status">● Live Sync</span>
+                </div>
+
+                <div class="flex flex-col gap-1.5">
+                    <div class="flex justify-between items-end">
+                        <span class="text-xs font-semibold" style="color: var(--text-main);">Cursor Models</span>
+                        <span class="text-[11px]" style="color: var(--text-sub);"><strong id="val-cursor" style="color: var(--text-main);">2%</strong> used</span>
+                    </div>
+                    <div class="bar-track"><div id="bar-cursor-fill" class="bar-fill" style="width: 2%; background-color: var(--bar-cursor);"></div></div>
+                </div>
+
+                <div class="flex flex-col gap-1.5">
+                    <div class="flex justify-between items-end">
+                        <span class="text-xs font-semibold" style="color: var(--text-main);">Other Models</span>
+                        <span class="text-[11px]" style="color: var(--text-sub);"><strong id="val-other" style="color: var(--text-main);">0%</strong> used</span>
+                    </div>
+                    <div class="bar-track"><div id="bar-other-fill" class="bar-fill" style="width: 0%; background-color: var(--bar-other);"></div></div>
+                </div>
+
+                <div id="grok-container" class="flex flex-col gap-1.5">
+                    <div class="flex justify-between items-end">
+                        <span class="text-xs font-semibold" style="color: var(--text-main);">Grok Bot <span class="text-[10px] font-normal opacity-70 ml-1">Weekly</span></span>
+                        <span class="text-[11px]" style="color: var(--text-sub);"><strong id="val-grok" style="color: var(--text-main);">0%</strong> used</span>
+                    </div>
+                    <div class="bar-track"><div id="bar-grok-fill" class="bar-fill" style="width: 0%; background-color: var(--bar-grok);"></div></div>
+                </div>
+
+                <div id="spend-warning" class="hidden px-3 py-1.5 rounded-lg flex items-center justify-between border" style="background-color: var(--spend-bg); border-color: var(--spend-bg);">
+                    <div class="flex items-center gap-2">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--spend-text);"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                        <span class="text-xs font-medium" style="color: var(--spend-text);">Additional On-Demand Spend</span>
+                    </div>
+                    <span id="spend-val" class="text-xs font-bold" style="color: var(--spend-text);">$0.00</span>
+                </div>
+            </div>
+
+            <!-- VIEW 2: HISTORY / STATS -->
+            <div id="view-history" class="view-container px-4 py-3 flex flex-col">
+                <div class="flex justify-between items-center mb-2.5 shrink-0">
+                    <span class="text-xs font-semibold" style="color: var(--text-main);">Request History</span>
+                    <div class="flex gap-1 p-1 rounded-full border" style="border-color: var(--border); background: var(--surface);">
+                        <button class="pill-btn active" data-range="24h">24h</button>
+                        <button class="pill-btn" data-range="3d">3d</button>
+                        <button class="pill-btn" data-range="15d">15d</button>
+                        <button class="pill-btn" data-range="30d">30d</button>
+                    </div>
+                </div>
+                <p id="history-status" class="text-[10px] mb-1.5 shrink-0" style="color: var(--text-sub);">Loading live usage…</p>
+                <div class="flex-1 w-full min-h-[140px] relative">
+                    <canvas id="usageChart"></canvas>
+                </div>
+            </div>
+
+            <!-- VIEW 3: SETTINGS PANEL (STRICT SINGLE DIVIDERS, CLEAN UNIFIED SPACING) -->
+            <div id="view-settings" class="view-container px-4 py-2.5 gap-3 overflow-y-auto">
+                <span class="text-xs font-bold tracking-wide" style="color: var(--text-main);">Widget Controls & Settings</span>
+
+                <!-- MANUAL SESSION INPUT ROW (EXACT SINGLE TOP DIVIDER) -->
+                <div class="flex flex-col gap-1.5 pt-2.5 border-t shrink-0" style="border-color: var(--border);">
+                    <div class="flex justify-between items-center">
+                        <span class="text-[11px] font-semibold flex items-center gap-1" style="color: var(--text-main);">
+                            Session Cookie Override
+                            <button id="btn-toggle-guide" class="text-sky-400 hover:text-sky-300 font-mono text-[10px] ml-1 underline cursor-pointer" title="Click for Step-by-Step Guide">(How to get?)</button>
+                        </span>
+                        <span id="save-confirm-msg" class="text-[10px] text-emerald-400 font-semibold font-mono hidden opacity-0 transition-opacity duration-300">✓ Saved!</span>
+                    </div>
+
+                    <!-- STEP-BY-STEP COOKIE GUIDE TOGGLE -->
+                    <div id="cookie-guide-box" class="hidden p-2 rounded-lg bg-black/40 border border-sky-500/30 text-[10px] leading-relaxed space-y-1 my-0.5" style="color: var(--text-sub);">
+                        <p class="font-semibold text-sky-300">How to get WorkosCursorSessionToken:</p>
+                        <ol class="list-decimal list-inside space-y-0.5">
+                            <li>Go to <strong class="text-white">cursor.com/dashboard</strong> in Chrome/Edge.</li>
+                            <li>Press <strong class="text-white">F12</strong> &gt; <strong class="text-white">Application</strong> &gt; <strong class="text-white">Cookies</strong> &gt; <strong class="text-white">cursor.com</strong>.</li>
+                            <li>Copy value of <strong class="text-sky-300 font-mono">WorkosCursorSessionToken</strong>.</li>
+                            <li>Paste below and click <strong class="text-emerald-400 font-semibold">Save</strong>.</li>
+                        </ol>
+                    </div>
+
+                    <div class="flex items-center gap-1.5 w-full">
+                        <input type="password" id="input-custom-token" placeholder="Paste WorkosCursorSessionToken or user_..." class="flex-1 min-w-0 text-[10px] font-mono px-2 py-1 rounded bg-black/40 border outline-none h-7" style="border-color: var(--border-color); color: var(--text-main);">
+                        <button id="btn-save-token" class="h-7 text-[10px] font-semibold px-3 py-1 rounded bg-sky-500/30 hover:bg-sky-500/40 text-sky-300 border border-sky-500/40 transition-all shrink-0 flex items-center justify-center">Save</button>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-2 border-t" style="border-color: var(--border);">
+                    <span class="text-[11px]" style="color: var(--text-sub);">Theme Preset</span>
+                    <select id="theme-select" class="text-[11px] px-2 py-1 rounded border outline-none" style="border-color: var(--border); color: var(--text-main); background: var(--surface);">
+                        <option value="system">System</option>
+                        <option value="dark">Midnight</option>
+                        <option value="light">Mist</option>
+                        <option value="cyberpunk">Neon</option>
+                        <option value="forest">Forest</option>
+                    </select>
+                </div>
+
+                <div class="flex flex-col gap-1 pt-2 border-t" style="border-color: var(--border);">
+                    <div class="flex justify-between"><span class="text-[11px]" style="color: var(--text-sub);">Glass Opacity</span><span id="lbl-op" class="text-[10px] font-mono" style="color: var(--text-main);">0.18</span></div>
+                    <input type="range" id="slider-opacity" min="0.0" max="0.95" step="0.05" value="0.18">
+                </div>
+
+                <div class="flex flex-col gap-1">
+                    <div class="flex justify-between"><span class="text-[11px]" style="color: var(--text-sub);">Glass Blur</span><span id="lbl-blur" class="text-[10px] font-mono" style="color: var(--text-main);">22px</span></div>
+                    <input type="range" id="slider-blur" min="0" max="50" step="1" value="22">
+                </div>
+                
+                <div class="flex items-center justify-between pt-2 border-t" style="border-color: var(--border);">
+                    <span class="text-[11px]" style="color: var(--text-sub);">Text Color</span>
+                    <input type="color" id="color-picker" value="#f1f5f9" class="w-5 h-5 rounded cursor-pointer bg-transparent border-0 p-0">
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px]" style="color: var(--text-sub);">Border / Outline Color</span>
+                    <input type="color" id="border-color-picker" value="#94a3b8" class="w-5 h-5 rounded cursor-pointer bg-transparent border-0 p-0">
+                </div>
+
+                <div class="flex flex-col gap-1">
+                    <div class="flex justify-between"><span class="text-[11px]" style="color: var(--text-sub);">Border Strength</span><span id="lbl-border-a" class="text-[10px] font-mono" style="color: var(--text-main);">0.28</span></div>
+                    <input type="range" id="slider-border-alpha" min="0" max="1" step="0.05" value="0.28">
+                </div>
+
+                <div class="flex items-center justify-between pt-2 border-t" style="border-color: var(--border);">
+                    <span class="text-[11px]" style="color: var(--text-sub);">Hide Grok Bot Usage</span>
+                    <input type="checkbox" id="chk-grok" class="w-3.5 h-3.5 cursor-pointer accent-[var(--text-accent)]">
+                </div>
+
+                <div class="flex items-center justify-between pt-2 border-t" style="border-color: var(--border);">
+                    <span class="text-[11px]" style="color: var(--text-sub);">Always On Top</span>
+                    <input type="checkbox" id="chk-ontop" checked class="w-3.5 h-3.5 cursor-pointer accent-[var(--text-accent)]">
+                </div>
+
+                <!-- Debug Info Display -->
+                <div id="debug-info-box" class="mt-1 p-2 rounded-lg border bg-black/30 text-[10px] font-mono leading-relaxed" style="border-color: var(--border-color); color: var(--text-sub);">
+                    Sync Status: <span id="debug-msg" style="color: var(--text-main);">Initializing...</span>
+                </div>
+
+                <!-- EXIT WIDGET BUTTON -->
+                <button id="btn-close-app" class="w-full mt-1 py-1.5 px-3 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    Close Widget
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const root = document.documentElement;
+        
+        let isLocked = false;
+        let isDragging = false;
+        let startX = 0, startY = 0;
+
+        const header = document.getElementById('drag-header');
+        
+        header.addEventListener('mousedown', (e) => {
+            if (isLocked) return;
+            if (e.target.closest('button') || e.target.closest('input') || e.target.closest('select')) return;
+            
+            isDragging = true;
+            startX = e.screenX;
+            startY = e.screenY;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging || isLocked) return;
+            const dx = e.screenX - startX;
+            const dy = e.screenY - startY;
+            startX = e.screenX;
+            startY = e.screenY;
+            
+            if (window.pywebview && window.pywebview.api) {
+                window.pywebview.api.move_window(dx, dy);
+            }
+        });
+
+        document.addEventListener('mouseup', () => { isDragging = false; });
+
+        document.getElementById('widget').addEventListener('dblclick', (e) => {
+            if (e.target.closest('button') || e.target.closest('input') || e.target.closest('select')) return;
+            refreshData();
+        });
+
+        const views = {
+            overview: document.getElementById('view-overview'),
+            history: document.getElementById('view-history'),
+            settings: document.getElementById('view-settings')
+        };
+
+        const iconSvgStats = document.getElementById('icon-svg-stats');
+        const iconSvgHome = document.getElementById('icon-svg-home');
+        const btnToggleMain = document.getElementById('btn-toggle-main');
+        const btnSettings = document.getElementById('btn-settings');
+        
+        let currentView = 'overview';
+        let chartInstance = null;
+        let currentHistoryRange = '24h';
+        let historyLoading = false;
+
+        async function loadHistory(range) {
+            const statusEl = document.getElementById('history-status');
+            currentHistoryRange = range || currentHistoryRange || '24h';
+            if (!window.pywebview || !window.pywebview.api || !window.pywebview.api.get_usage_history) {
+                if (statusEl) statusEl.textContent = 'History unavailable (backend not connected)';
+                return;
+            }
+            if (historyLoading) return;
+            historyLoading = true;
+            if (statusEl) statusEl.textContent = 'Loading live usage…';
+            try {
+                const res = await window.pywebview.api.get_usage_history(currentHistoryRange);
+                if (!res || res.error) {
+                    if (statusEl) statusEl.textContent = 'History error: ' + ((res && res.error) || 'unknown');
+                    return;
+                }
+                if (!chartInstance) initChart();
+                chartInstance.data.labels = res.labels || [];
+                chartInstance.data.datasets[0].data = res.cursor || [];
+                chartInstance.data.datasets[1].data = res.other || [];
+                chartInstance.update();
+                const total = res.totalEvents != null ? res.totalEvents : 0;
+                if (statusEl) {
+                    statusEl.textContent = `Live · ${total} request${total === 1 ? '' : 's'} in range`;
+                }
+            } catch (e) {
+                if (statusEl) statusEl.textContent = 'History error: ' + (e.message || e);
+            } finally {
+                historyLoading = false;
+            }
+        }
+
+
+        function resizeWindowForView(target) {
+            let targetHeight = 320;
+            if (target === 'overview') {
+                const isSpendShown = !document.getElementById('spend-warning').classList.contains('hidden');
+                targetHeight = isSpendShown ? 280 : 235; // Perfect bottom padding & clear margin
+            } else if (target === 'history') {
+                targetHeight = 320;
+            } else if (target === 'settings') {
+                const guideBox = document.getElementById('cookie-guide-box');
+                const isGuideOpen = guideBox && !guideBox.classList.contains('hidden');
+                targetHeight = isGuideOpen ? 520 : 420;
+            }
+
+            if (window.pywebview && window.pywebview.api && window.pywebview.api.resize_window) {
+                window.pywebview.api.resize_window(targetHeight);
+            }
+        }
+
+        function switchView(target) {
+            Object.keys(views).forEach(k => {
+                views[k].classList.remove('active');
+            });
+
+            views[target].classList.add('active');
+            currentView = target;
+
+            if (target === 'overview') {
+                iconSvgStats.classList.remove('hidden');
+                iconSvgHome.classList.add('hidden');
+                btnToggleMain.title = "View Stats / Request History Chart";
+                btnToggleMain.classList.remove('active-icon');
+                btnSettings.classList.remove('active-icon');
+            } else if (target === 'history') {
+                iconSvgStats.classList.add('hidden');
+                iconSvgHome.classList.remove('hidden');
+                btnToggleMain.title = "View Home / Model Usage Bars";
+                btnToggleMain.classList.add('active-icon');
+                btnSettings.classList.remove('active-icon');
+
+                setTimeout(() => {
+                    if (!chartInstance) initChart();
+                    else chartInstance.resize();
+                    loadHistory(currentHistoryRange);
+                }, 10);
+            } else if (target === 'settings') {
+                iconSvgStats.classList.add('hidden');
+                iconSvgHome.classList.remove('hidden');
+                btnToggleMain.title = "Return to Home";
+                btnToggleMain.classList.remove('active-icon');
+                btnSettings.classList.add('active-icon');
+            }
+
+            resizeWindowForView(target);
+        }
+
+        btnToggleMain.onclick = (e) => {
+            e.stopPropagation();
+            if (currentView === 'overview') {
+                switchView('history');
+            } else {
+                switchView('overview');
+            }
+        };
+
+        btnSettings.onclick = (e) => { 
+            e.stopPropagation(); 
+            if (currentView === 'settings') {
+                switchView('overview');
+            } else {
+                switchView('settings');
+            }
+        };
+
+        // Toggle Cookie Guide Box Action
+        document.getElementById('btn-toggle-guide').onclick = (e) => {
+            e.stopPropagation();
+            const box = document.getElementById('cookie-guide-box');
+            box.classList.toggle('hidden');
+            resizeWindowForView('settings');
+        };
+
+        const btnLock = document.getElementById('btn-lock');
+        const iconUnlocked = document.getElementById('icon-unlocked');
+        const iconLocked = document.getElementById('icon-locked');
+
+        btnLock.onclick = (e) => {
+            e.stopPropagation();
+            isLocked = !isLocked;
+            if (isLocked) {
+                iconUnlocked.classList.add('hidden');
+                iconLocked.classList.remove('hidden');
+                btnLock.classList.add('locked-active');
+                btnLock.title = "Locked (Dragging Disabled) - Click to Unlock";
+            } else {
+                iconLocked.classList.add('hidden');
+                iconUnlocked.classList.remove('hidden');
+                btnLock.classList.remove('locked-active');
+                btnLock.title = "Lock Position / Dragging";
+            }
+        };
+
+        document.getElementById('btn-close-app').onclick = (e) => {
+            e.stopPropagation();
+            if (window.pywebview && window.pywebview.api) window.pywebview.api.close_app();
+            else window.close();
+        };
+
+        // Save token handler with Visual Confirmation Toast Feedback
+        document.getElementById('btn-save-token').onclick = async (e) => {
+            e.stopPropagation();
+            const val = document.getElementById('input-custom-token').value.trim();
+            const saveBtn = document.getElementById('btn-save-token');
+            const confirmMsg = document.getElementById('save-confirm-msg');
+
+            if (window.pywebview && window.pywebview.api) {
+                await window.pywebview.api.save_custom_token(val);
+                
+                // Trigger Confirmation Visuals
+                if (confirmMsg) {
+                    confirmMsg.classList.remove('hidden');
+                    setTimeout(() => confirmMsg.classList.remove('opacity-0'), 10);
+                }
+
+                saveBtn.textContent = '✓ Saved';
+                saveBtn.classList.replace('bg-sky-500/30', 'bg-emerald-500/30');
+                saveBtn.classList.replace('text-sky-300', 'text-emerald-300');
+                saveBtn.classList.replace('border-sky-500/40', 'border-emerald-500/40');
+
+                setTimeout(() => {
+                    saveBtn.textContent = 'Save';
+                    saveBtn.classList.replace('bg-emerald-500/30', 'bg-sky-500/30');
+                    saveBtn.classList.replace('text-emerald-300', 'text-sky-300');
+                    saveBtn.classList.replace('border-emerald-500/40', 'border-sky-500/40');
+                    if (confirmMsg) {
+                        confirmMsg.classList.add('opacity-0');
+                        setTimeout(() => confirmMsg.classList.add('hidden'), 300);
+                    }
+                }, 2200);
+
+                refreshData();
+            }
+        };
+
+        async function refreshData() {
+            const syncIcon = document.getElementById('sync-status');
+            const debugMsg = document.getElementById('debug-msg');
+            syncIcon.textContent = '● Refreshing...';
+            syncIcon.className = 'text-[10px] text-amber-400 font-mono';
+
+            if (window.pywebview && window.pywebview.api) {
+                try {
+                    const res = await window.pywebview.api.get_live_usage();
+                    if (res && !res.error) {
+                        updateUIWithData(res);
+                        syncIcon.textContent = '● Live Sync';
+                        syncIcon.className = 'text-[10px] text-emerald-400 font-mono';
+                        if(debugMsg) debugMsg.textContent = 'Live Sync Active (' + res.email + ')';
+                        if (currentView === 'history') loadHistory(currentHistoryRange);
+                        return;
+                    } else if (res && res.error) {
+                        if(debugMsg) debugMsg.textContent = 'Status: ' + res.error;
+                        syncIcon.textContent = '● Auth Error';
+                        syncIcon.className = 'text-[10px] text-rose-400 font-mono';
+                        return;
+                    }
+                } catch(e) { 
+                    console.log('API Error:', e); 
+                    if(debugMsg) debugMsg.textContent = 'Exception: ' + e.message;
+                    syncIcon.textContent = '● Auth Error';
+                    syncIcon.className = 'text-[10px] text-rose-400 font-mono';
+                    return;
+                }
+            }
+            
+            syncIcon.textContent = '● Demo Mode';
+            syncIcon.className = 'text-[10px] text-blue-400 font-mono';
+            if(debugMsg) debugMsg.textContent = 'Status: Backend bridge unavailable (Demo Mode)';
+        }
+
+        function updateUIWithData(data) {
+            if (data.email) {
+                const username = data.email.split('@')[0];
+                document.getElementById('user-display').textContent = username;
+            }
+            if (data.plan) {
+                document.getElementById('plan-badge').textContent = data.plan;
+            }
+            if (data.resetDate) {
+                document.getElementById('reset-date-txt').textContent = data.resetDate;
+            }
+
+            const cursorPct = data.cursorPct ?? 0;
+            const otherPct = data.otherPct ?? 0;
+            const grokPct = data.grokPct ?? 0;
+
+            document.getElementById('val-cursor').textContent = `${cursorPct}%`;
+            document.getElementById('bar-cursor-fill').style.width = `${cursorPct}%`;
+
+            document.getElementById('val-other').textContent = `${otherPct}%`;
+            document.getElementById('bar-other-fill').style.width = `${otherPct}%`;
+
+            document.getElementById('val-grok').textContent = `${grokPct}%`;
+            document.getElementById('bar-grok-fill').style.width = `${grokPct}%`;
+
+            const spendVal = data.onDemandSpend || 0;
+            const spendBox = document.getElementById('spend-warning');
+            if (spendVal > 0) {
+                spendBox.classList.remove('hidden');
+                document.getElementById('spend-val').textContent = `$${spendVal.toFixed(2)}`;
+            } else {
+                spendBox.classList.add('hidden');
+            }
+
+            if (currentView === 'overview') {
+                resizeWindowForView('overview');
+            }
+        }
+
+        const themeSelect = document.getElementById('theme-select');
+        const sysPref = window.matchMedia('(prefers-color-scheme: dark)');
+        const textPicker = document.getElementById('color-picker');
+        const borderPicker = document.getElementById('border-color-picker');
+        const borderAlphaSlider = document.getElementById('slider-border-alpha');
+
+        function hexToRgba(hex, alpha) {
+            let h = (hex || '#ffffff').replace('#', '').trim();
+            if (h.length === 3) h = h.split('').map(c => c + c).join('');
+            const n = parseInt(h, 16);
+            if (Number.isNaN(n)) return `rgba(148,163,184,${alpha})`;
+            return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;
+        }
+
+        function syncBorderVar() {
+            const hex = getCSSVar('--border-color') || borderPicker.value || '#94a3b8';
+            const alpha = parseFloat(getCSSVar('--border-alpha') || borderAlphaSlider.value || '0.28');
+            root.style.setProperty('--border', hexToRgba(hex, alpha));
+        }
+
+        function syncPickersFromTheme() {
+            const text = getCSSVar('--text-main');
+            const border = getCSSVar('--border-color');
+            const alpha = parseFloat(getCSSVar('--border-alpha') || '0.28');
+            if (text && text.startsWith('#')) textPicker.value = text.length === 7 ? text : textPicker.value;
+            if (border && border.startsWith('#')) borderPicker.value = border.length === 7 ? border : borderPicker.value;
+            borderAlphaSlider.value = String(alpha);
+            document.getElementById('lbl-border-a').textContent = alpha.toFixed(2);
+            syncBorderVar();
+        }
+
+        function applyTheme(val) {
+            let t = val === 'system' ? (sysPref.matches ? 'dark' : 'light') : val;
+            // Clear inline overrides so preset variables apply cleanly
+            root.style.removeProperty('--text-main');
+            root.style.removeProperty('--border-color');
+            root.style.removeProperty('--border-alpha');
+            root.style.removeProperty('--border');
+            root.setAttribute('data-theme', t);
+            // Force layout read then sync pickers
+            requestAnimationFrame(() => {
+                syncPickersFromTheme();
+                if (chartInstance) updateChartColors();
+            });
+        }
+        themeSelect.addEventListener('change', (e) => applyTheme(e.target.value));
+        sysPref.addEventListener('change', () => { if (themeSelect.value === 'system') applyTheme('system'); });
+
+        document.getElementById('slider-opacity').addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            root.style.setProperty('--glass-opacity', val);
+            document.getElementById('lbl-op').textContent = val.toFixed(2);
+        });
+        document.getElementById('slider-blur').addEventListener('input', (e) => {
+            const val = e.target.value;
+            root.style.setProperty('--glass-blur', val + 'px');
+            document.getElementById('lbl-blur').textContent = val + 'px';
+        });
+        textPicker.addEventListener('input', (e) => {
+            root.style.setProperty('--text-main', e.target.value);
+            if (chartInstance) updateChartColors();
+        });
+        borderPicker.addEventListener('input', (e) => {
+            root.style.setProperty('--border-color', e.target.value);
+            syncBorderVar();
+        });
+        borderAlphaSlider.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            root.style.setProperty('--border-alpha', val);
+            document.getElementById('lbl-border-a').textContent = val.toFixed(2);
+            syncBorderVar();
+        });
+        document.getElementById('chk-grok').addEventListener('change', (e) => {
+            document.getElementById('grok-container').style.display = e.target.checked ? 'none' : 'flex';
+            if (currentView === 'overview') resizeWindowForView('overview');
+        });
+        document.getElementById('chk-ontop').addEventListener('change', (e) => {
+            if (window.pywebview && window.pywebview.api) {
+                window.pywebview.api.set_on_top(e.target.checked);
+            }
+        });
+
+        function getCSSVar(name) { return getComputedStyle(root).getPropertyValue(name).trim(); }
+
+        function initChart() {
+            const ctx = document.getElementById('usageChart').getContext('2d');
+            Chart.defaults.maintainAspectRatio = false;
+            Chart.defaults.responsive = true;
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        { label: 'Cursor Models', data: [], tension: 0.35, borderWidth: 2, pointRadius: 2, fill: false },
+                        { label: 'Other Models', data: [], tension: 0.35, borderWidth: 2, pointRadius: 2, fill: false }
+                    ]
+                },
+                options: {
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: { legend: { display: false }, tooltip: { cornerRadius: 8, padding: 8 } },
+                    scales: {
+                        x: { grid: { drawBorder: false } },
+                        y: {
+                            grid: { drawBorder: false },
+                            beginAtZero: true,
+                            border: { display: false },
+                            ticks: { precision: 0 }
+                        }
+                    },
+                    layout: { padding: 0 }
+                }
+            });
+            updateChartColors();
+        }
+
+        function updateChartColors() {
+            if (!chartInstance) return;
+            const textCol = getCSSVar('--text-main') || '#fff';
+            const gridCol = getCSSVar('--chart-grid') || 'rgba(255,255,255,0.1)';
+            chartInstance.data.datasets[0].borderColor = getCSSVar('--bar-cursor');
+            chartInstance.data.datasets[0].backgroundColor = getCSSVar('--bar-cursor');
+            chartInstance.data.datasets[1].borderColor = getCSSVar('--bar-other');
+            chartInstance.data.datasets[1].backgroundColor = getCSSVar('--bar-other');
+            chartInstance.options.scales.x.ticks.color = textCol;
+            chartInstance.options.scales.y.ticks.color = textCol;
+            chartInstance.options.scales.x.grid.color = gridCol;
+            chartInstance.options.scales.y.grid.color = gridCol;
+            chartInstance.update();
+        }
+
+        document.querySelectorAll('.pill-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                const range = e.target.getAttribute('data-range');
+                loadHistory(range);
+            });
+        });
+
+        switchView('overview');
+        applyTheme('system');
+        syncBorderVar();
+        window.addEventListener('pywebviewready', async () => { 
+            if (window.pywebview.api.get_saved_token) {
+                const saved = await window.pywebview.api.get_saved_token();
+                if (saved) document.getElementById('input-custom-token').value = saved;
+            }
+            refreshData(); 
+        });
+        setInterval(refreshData, 60000);
+    </script>
+</body>
+</html>

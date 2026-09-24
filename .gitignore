@@ -1,0 +1,37 @@
+# Bytecode / caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+.Python
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# PyInstaller / release artifacts (never commit)
+build/
+dist/
+release/
+*.egg-info/
+.eggs/
+
+# Local / secret config — never commit session tokens
+.cursor_widget_config.json
+*.token
+.env
+.env.*
+
+# Editor / OS junk
+.idea/
+.vscode/
+*.swp
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Scratch / temp
+_tmp*
+*.log
+*.zip
