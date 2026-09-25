@@ -172,28 +172,29 @@ def _history_bucket_plan(range_key, now_local):
             labels.append(_format_hour_ampm(dt.hour))
         return start_ms, max(now_ms, end_aligned_ms), n, width, labels
 
-    if range_key == '3d':
-        start_day = (now_local - timedelta(days=2)).replace(hour=0, minute=0, second=0, microsecond=0)
+    if range_key == '7d':
+        start_day = (now_local - timedelta(days=6)).replace(hour=0, minute=0, second=0, microsecond=0)
         start_ms = int(start_day.timestamp() * 1000)
-        n, width = 3, day
-        labels = ['Day 1', 'Day 2', 'Today']
-        return start_ms, now_ms, n, width, labels
-
-    if range_key == '15d':
-        n, width = 6, (15 * day) // 6
-        start_ms = now_ms - 15 * day
+        n, width = 7, day
         labels = []
         for i in range(n):
             if i == n - 1:
-                labels.append('Now')
-            else:
-                day_num = int((i * width) / day) + 1
-                labels.append(str(day_num))
+                labels.append('Today')
+                continue
+            dt = datetime.fromtimestamp((start_ms + i * width) / 1000.0)
+            labels.append(dt.strftime('%a'))
         return start_ms, now_ms, n, width, labels
 
-    n, width = 4, (30 * day) // 4
+    # 30d (default)
+    n, width = 6, (30 * day) // 6
     start_ms = now_ms - 30 * day
-    labels = [f'W{i + 1}' for i in range(n)]
+    labels = []
+    for i in range(n):
+        if i == n - 1:
+            labels.append('Now')
+        else:
+            day_num = int((i * width) / day) + 1
+            labels.append(str(day_num))
     return start_ms, now_ms, n, width, labels
 
 
@@ -400,23 +401,29 @@ class Api:
             range_key = (range_key or 'hr').strip().lower()
             if range_key in ('hourly', '12h'):
                 range_key = 'hr'
-            if range_key not in ('hr', '24h', '3d', '15d', '30d'):
+            if range_key in ('24', '7days', '7 day', '7 days'):
+                range_key = {'24': '24h', '7days': '7d', '7 day': '7d', '7 days': '7d'}.get(range_key, range_key)
+            if range_key in ('30', '30days', '30 day', '30 days'):
+                range_key = '30d'
+            if range_key not in ('hr', '24h', '7d', '30d'):
                 range_key = 'hr'
 
             cookie_headers, email, membership, err = self._resolve_auth()
             if err:
                 return err
 
+            now_local = datetime.now()
             now_ms = int(time.time() * 1000)
-            start_ms, end_ms, n, width, labels = _history_bucket_plan(range_key, datetime.now())
+            start_ms, end_ms, n, width, labels = _history_bucket_plan(range_key, now_local)
             # Fetch slightly wider than bucket window so edge events aren't missed
             fetch_start = min(start_ms, now_ms - {
                 'hr': 12 * 3600 * 1000,
                 '24h': 24 * 3600 * 1000,
-                '3d': 3 * 24 * 3600 * 1000,
-                '15d': 15 * 24 * 3600 * 1000,
+                '7d': 7 * 24 * 3600 * 1000,
                 '30d': 30 * 24 * 3600 * 1000,
             }[range_key])
+            today = now_local.date()
+            yesterday = today - timedelta(days=1)
 
             numeric_id = self._fetch_numeric_user_id(cookie_headers)
             events, total = self._fetch_usage_events(cookie_headers, fetch_start, now_ms, numeric_id)
@@ -427,6 +434,7 @@ class Api:
             output_tokens = [0] * n
             cache_tokens = [0] * n
             total_token_sum = 0
+            event_rows = []
 
             for ev in events:
                 try:
@@ -458,6 +466,42 @@ class Api:
                 cache_tokens[idx] += cache
                 total_token_sum += inp + out + cache
 
+                model_name = str(ev.get('model') or 'unknown')
+                day_flag = ''
+                try:
+                    dt = datetime.fromtimestamp(ts / 1000.0)
+                    time_label = dt.strftime('%I:%M %p').lstrip('0')
+                    ev_date = dt.date()
+                    if ev_date == today:
+                        day_flag = 'today'
+                    elif ev_date == yesterday:
+                        day_flag = 'yesterday'
+                except Exception:
+                    time_label = str(ts)
+                event_rows.append({
+                    'ts': ts,
+                    'time': time_label,
+                    'day': day_flag,
+                    'model': model_name,
+                    'tokens': inp + out + cache,
+                    'input': inp,
+                    'output': out,
+                    'cache': cache,
+                })
+
+            event_rows.sort(key=lambda row: row.get('ts', 0), reverse=True)
+            events_out = []
+            for row in event_rows[:500]:
+                events_out.append({
+                    'time': row['time'],
+                    'day': row['day'],
+                    'model': row['model'],
+                    'tokens': row['tokens'],
+                    'input': row['input'],
+                    'output': row['output'],
+                    'cache': row['cache'],
+                })
+
             return {
                 'live': True,
                 'range': range_key,
@@ -469,6 +513,7 @@ class Api:
                     'output': output_tokens,
                     'cache': cache_tokens,
                 },
+                'events': events_out,
                 'totalEvents': int(total or len(events)),
                 'totalTokens': int(total_token_sum),
                 'email': email,
@@ -625,7 +670,7 @@ if __name__ == '__main__':
             transparent=True,
             on_top=True,
             width=380,
-            height=235,
+            height=252,
             resizable=False,
             easy_drag=False
         )
@@ -633,6 +678,7 @@ if __name__ == '__main__':
         QTimer.singleShot(10, enforce_pure_alpha_transparency)
         QTimer.singleShot(100, enforce_pure_alpha_transparency)
         QTimer.singleShot(400, enforce_pure_alpha_transparency)
+        QTimer.singleShot(50, lambda: api.resize_window(252))
 
         try:
             webview.start(gui='qt', debug=False)

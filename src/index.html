@@ -208,12 +208,138 @@
         .bar-fill { height: 100%; border-radius: 99px; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
 
         .pill-btn {
-            font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 12px;
+            font-size: 9px; font-weight: 600; padding: 3px 6px; border-radius: 12px;
             color: var(--text-sub); cursor: pointer; transition: all 0.2s;
             position: relative; z-index: 50;
+            white-space: nowrap;
         }
         .pill-btn.active { background-color: var(--bar-bg); color: var(--text-main); }
         .pill-btn:hover:not(.active) { color: var(--text-main); }
+
+        #home-bars {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly;
+            min-height: 0;
+            gap: 0;
+        }
+        #home-bars .home-metric {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 6px;
+            flex: 1 1 0;
+            min-height: 0;
+        }
+        #spend-panel {
+            flex-shrink: 0;
+            margin-top: 4px;
+        }
+        #spend-panel.is-zero {
+            background-color: var(--surface) !important;
+            border-color: var(--border) !important;
+        }
+        #spend-panel.is-zero #spend-label,
+        #spend-panel.is-zero #spend-val,
+        #spend-panel.is-zero svg {
+            color: var(--text-sub) !important;
+        }
+
+        .breakdown-wrap {
+            flex: 1 1 auto;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+        }
+        .breakdown-scroll {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        .breakdown-cols {
+            display: grid;
+            grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.55fr) minmax(0, 1.9fr);
+            column-gap: 12px;
+            align-items: center;
+            padding: 6px 10px;
+            box-sizing: border-box;
+            width: 100%;
+        }
+        .breakdown-header {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            font-size: 10px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-sub);
+            border-bottom: 1px solid var(--border);
+            background: rgba(var(--bg-r), var(--bg-g), var(--bg-b), 0.96);
+            backdrop-filter: blur(8px);
+        }
+        .breakdown-row {
+            font-size: 10px;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            border-bottom: 1px solid var(--border);
+            min-height: 34px;
+        }
+        .breakdown-row:hover {
+            background: var(--btn-hover);
+        }
+        .breakdown-row.is-empty {
+            color: var(--text-sub);
+            grid-template-columns: 1fr;
+        }
+        .breakdown-time {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+            font-family: 'Inter', sans-serif;
+            min-width: 0;
+        }
+        .day-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .day-dot.today { background: #22c55e; box-shadow: 0 0 6px rgba(34, 197, 94, 0.55); }
+        .day-dot.yesterday { background: #ef4444; box-shadow: 0 0 6px rgba(239, 68, 68, 0.45); }
+        .breakdown-model {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-family: 'Inter', sans-serif;
+            font-size: 10px;
+            min-width: 0;
+        }
+        .breakdown-tokens {
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            white-space: normal;
+            word-break: break-word;
+            min-width: 0;
+        }
+        .breakdown-sub {
+            display: block;
+            margin-top: 2px;
+            font-size: 8px;
+            font-weight: 500;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-sub);
+            white-space: normal;
+        }
     </style>
 </head>
 <body>
@@ -237,6 +363,7 @@
                 <button id="btn-toggle-main" class="icon-btn" title="View Request History">
                     <svg id="icon-svg-stats" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
                     <svg id="icon-svg-tokens" class="hidden" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    <svg id="icon-svg-list" class="hidden" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
                     <svg id="icon-svg-home" class="hidden" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
                 </button>
 
@@ -246,79 +373,79 @@
             </div>
         </div>
 
-        <div class="flex-1 w-full overflow-hidden relative p-1">
+        <div class="flex-1 w-full overflow-hidden relative p-1 min-h-0">
             
-            <!-- VIEW 1: OVERVIEW / HOME (BALANCED PADDING, NO SCROLLBAR) -->
-            <div id="view-overview" class="view-container active px-4 pt-3 pb-4 gap-3 overflow-hidden">
-                <div class="flex justify-between items-center text-[11px]" style="color: var(--text-sub);">
+            <!-- VIEW 1: OVERVIEW / HOME — fixed height, evenly spaced metrics -->
+            <div id="view-overview" class="view-container active px-4 pt-2 pb-2 overflow-y-auto">
+                <div class="flex justify-between items-center text-[11px] shrink-0 mb-1" style="color: var(--text-sub);">
                     <span>Reset Date: <strong id="reset-date-txt" style="color: var(--text-main);">End of Month</strong></span>
                     <span id="sync-status" class="text-[10px] text-emerald-400 font-mono" title="Sync Status">● Live Sync</span>
                 </div>
 
-                <div class="flex flex-col gap-1.5">
-                    <div class="flex justify-between items-end">
-                        <span class="text-xs font-semibold" style="color: var(--text-main);">Cursor Models</span>
-                        <span class="text-[11px]" style="color: var(--text-sub);"><strong id="val-cursor" style="color: var(--text-main);">2%</strong> used</span>
+                <div id="home-bars">
+                    <div class="home-metric">
+                        <div class="flex justify-between items-end">
+                            <span class="text-xs font-semibold" style="color: var(--text-main);">Cursor Models</span>
+                            <span class="text-[11px]" style="color: var(--text-sub);"><strong id="val-cursor" style="color: var(--text-main);">2%</strong> used</span>
+                        </div>
+                        <div class="bar-track"><div id="bar-cursor-fill" class="bar-fill" style="width: 2%; background-color: var(--bar-cursor);"></div></div>
                     </div>
-                    <div class="bar-track"><div id="bar-cursor-fill" class="bar-fill" style="width: 2%; background-color: var(--bar-cursor);"></div></div>
+
+                    <div class="home-metric">
+                        <div class="flex justify-between items-end">
+                            <span class="text-xs font-semibold" style="color: var(--text-main);">Other Models</span>
+                            <span class="text-[11px]" style="color: var(--text-sub);"><strong id="val-other" style="color: var(--text-main);">0%</strong> used</span>
+                        </div>
+                        <div class="bar-track"><div id="bar-other-fill" class="bar-fill" style="width: 0%; background-color: var(--bar-other);"></div></div>
+                    </div>
+
+                    <div id="grok-container" class="home-metric">
+                        <div class="flex justify-between items-end">
+                            <span class="text-xs font-semibold" style="color: var(--text-main);">Grok Bot <span class="text-[10px] font-normal opacity-70 ml-1">Weekly</span></span>
+                            <span class="text-[11px]" style="color: var(--text-sub);"><strong id="val-grok" style="color: var(--text-main);">0%</strong> used</span>
+                        </div>
+                        <div class="bar-track"><div id="bar-grok-fill" class="bar-fill" style="width: 0%; background-color: var(--bar-grok);"></div></div>
+                    </div>
                 </div>
 
-                <div class="flex flex-col gap-1.5">
-                    <div class="flex justify-between items-end">
-                        <span class="text-xs font-semibold" style="color: var(--text-main);">Other Models</span>
-                        <span class="text-[11px]" style="color: var(--text-sub);"><strong id="val-other" style="color: var(--text-main);">0%</strong> used</span>
-                    </div>
-                    <div class="bar-track"><div id="bar-other-fill" class="bar-fill" style="width: 0%; background-color: var(--bar-other);"></div></div>
-                </div>
-
-                <div id="grok-container" class="flex flex-col gap-1.5">
-                    <div class="flex justify-between items-end">
-                        <span class="text-xs font-semibold" style="color: var(--text-main);">Grok Bot <span class="text-[10px] font-normal opacity-70 ml-1">Weekly</span></span>
-                        <span class="text-[11px]" style="color: var(--text-sub);"><strong id="val-grok" style="color: var(--text-main);">0%</strong> used</span>
-                    </div>
-                    <div class="bar-track"><div id="bar-grok-fill" class="bar-fill" style="width: 0%; background-color: var(--bar-grok);"></div></div>
-                </div>
-
-                <div id="spend-warning" class="hidden px-3 py-1.5 rounded-lg flex items-center justify-between border" style="background-color: var(--spend-bg); border-color: var(--spend-bg);">
+                <div id="spend-panel" class="is-zero px-3 py-1.5 rounded-lg flex items-center justify-between border" style="background-color: var(--spend-bg); border-color: var(--spend-bg);">
                     <div class="flex items-center gap-2">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--spend-text);"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                        <span class="text-xs font-medium" style="color: var(--spend-text);">Additional On-Demand Spend</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                        <span id="spend-label" class="text-xs font-medium">Additional On-Demand Spend</span>
                     </div>
-                    <span id="spend-val" class="text-xs font-bold" style="color: var(--spend-text);">$0.00</span>
+                    <span id="spend-val" class="text-xs font-bold">$0.00</span>
                 </div>
             </div>
 
             <!-- VIEW 2: REQUEST HISTORY -->
-            <div id="view-history" class="view-container px-4 py-3 flex flex-col">
-                <div class="flex justify-between items-center mb-2.5 shrink-0">
+            <div id="view-history" class="view-container px-4 py-2 flex flex-col overflow-y-auto">
+                <div class="flex justify-between items-center mb-1.5 shrink-0">
                     <span class="text-xs font-semibold" style="color: var(--text-main);">Request History</span>
-                    <div class="flex gap-1 p-1 rounded-full border" style="border-color: var(--border); background: var(--surface);">
+                    <div class="flex gap-0.5 p-1 rounded-full border" style="border-color: var(--border); background: var(--surface);">
                         <button class="pill-btn active" data-chart="requests" data-range="hr">Hr</button>
-                        <button class="pill-btn" data-chart="requests" data-range="24h">24h</button>
-                        <button class="pill-btn" data-chart="requests" data-range="3d">3d</button>
-                        <button class="pill-btn" data-chart="requests" data-range="15d">15d</button>
-                        <button class="pill-btn" data-chart="requests" data-range="30d">30d</button>
+                        <button class="pill-btn" data-chart="requests" data-range="24h">24</button>
+                        <button class="pill-btn" data-chart="requests" data-range="7d">7 days</button>
+                        <button class="pill-btn" data-chart="requests" data-range="30d">30 days</button>
                     </div>
                 </div>
-                <p id="history-status" class="text-[10px] mb-1.5 shrink-0" style="color: var(--text-sub);">Loading live usage…</p>
-                <div class="flex-1 w-full min-h-[140px] relative">
+                <p id="history-status" class="text-[10px] mb-1 shrink-0" style="color: var(--text-sub);">Loading live usage…</p>
+                <div class="flex-1 w-full min-h-[100px] relative">
                     <canvas id="usageChart"></canvas>
                 </div>
             </div>
 
             <!-- VIEW 3: TOKEN USAGE HISTORY -->
-            <div id="view-tokens" class="view-container px-4 py-3 flex flex-col">
-                <div class="flex justify-between items-center mb-2.5 shrink-0">
+            <div id="view-tokens" class="view-container px-4 py-2 flex flex-col overflow-y-auto">
+                <div class="flex justify-between items-center mb-1.5 shrink-0">
                     <span class="text-xs font-semibold" style="color: var(--text-main);">Token Usage History</span>
-                    <div class="flex gap-1 p-1 rounded-full border" style="border-color: var(--border); background: var(--surface);">
+                    <div class="flex gap-0.5 p-1 rounded-full border" style="border-color: var(--border); background: var(--surface);">
                         <button class="pill-btn active" data-chart="tokens" data-range="hr">Hr</button>
-                        <button class="pill-btn" data-chart="tokens" data-range="24h">24h</button>
-                        <button class="pill-btn" data-chart="tokens" data-range="3d">3d</button>
-                        <button class="pill-btn" data-chart="tokens" data-range="15d">15d</button>
-                        <button class="pill-btn" data-chart="tokens" data-range="30d">30d</button>
+                        <button class="pill-btn" data-chart="tokens" data-range="24h">24</button>
+                        <button class="pill-btn" data-chart="tokens" data-range="7d">7 days</button>
+                        <button class="pill-btn" data-chart="tokens" data-range="30d">30 days</button>
                     </div>
                 </div>
-                <div class="flex items-center justify-between mb-1.5 shrink-0">
+                <div class="flex items-center justify-between mb-1 shrink-0">
                     <p id="token-status" class="text-[10px]" style="color: var(--text-sub);">Loading token usage…</p>
                     <div class="flex items-center gap-2 text-[9px] font-semibold" style="color: var(--text-sub);">
                         <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full" style="background: var(--bar-cursor);"></span>In</span>
@@ -326,13 +453,39 @@
                         <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full" style="background: var(--bar-grok);"></span>Cache</span>
                     </div>
                 </div>
-                <div class="flex-1 w-full min-h-[140px] relative">
+                <div class="flex-1 w-full min-h-[100px] relative">
                     <canvas id="tokenChart"></canvas>
                 </div>
             </div>
 
-            <!-- VIEW 4: SETTINGS PANEL -->
-            <div id="view-settings" class="view-container px-4 py-2.5 gap-3 overflow-y-auto">
+            <!-- VIEW 4: TOKEN BREAKDOWN (PER REQUEST) -->
+            <div id="view-breakdown" class="view-container px-4 py-2 flex flex-col overflow-hidden">
+                <div class="flex justify-between items-center mb-1.5 shrink-0">
+                    <span class="text-xs font-semibold" style="color: var(--text-main);">Token Breakdown Usage</span>
+                    <div class="flex gap-0.5 p-1 rounded-full border" style="border-color: var(--border); background: var(--surface);">
+                        <button class="pill-btn active" data-chart="breakdown" data-range="hr">Hr</button>
+                        <button class="pill-btn" data-chart="breakdown" data-range="24h">24</button>
+                        <button class="pill-btn" data-chart="breakdown" data-range="7d">7 days</button>
+                        <button class="pill-btn" data-chart="breakdown" data-range="30d">30 days</button>
+                    </div>
+                </div>
+                <p id="breakdown-status" class="text-[10px] mb-1 shrink-0" style="color: var(--text-sub);">Loading per-request usage…</p>
+                <div class="breakdown-wrap">
+                    <div class="breakdown-scroll">
+                        <div class="breakdown-header breakdown-cols">
+                            <span>Time</span>
+                            <span>Model Used</span>
+                            <span>Token Used</span>
+                        </div>
+                        <div id="breakdown-body">
+                            <div class="breakdown-row breakdown-cols is-empty">No requests yet</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 5: SETTINGS PANEL -->
+            <div id="view-settings" class="view-container px-4 py-2 gap-2.5 overflow-y-auto">
                 <span class="text-xs font-bold tracking-wide" style="color: var(--text-main);">Widget Controls & Settings</span>
 
                 <!-- MANUAL SESSION INPUT ROW (EXACT SINGLE TOP DIVIDER) -->
@@ -463,11 +616,13 @@
             overview: document.getElementById('view-overview'),
             history: document.getElementById('view-history'),
             tokens: document.getElementById('view-tokens'),
+            breakdown: document.getElementById('view-breakdown'),
             settings: document.getElementById('view-settings')
         };
 
         const iconSvgStats = document.getElementById('icon-svg-stats');
         const iconSvgTokens = document.getElementById('icon-svg-tokens');
+        const iconSvgList = document.getElementById('icon-svg-list');
         const iconSvgHome = document.getElementById('icon-svg-home');
         const btnToggleMain = document.getElementById('btn-toggle-main');
         const btnSettings = document.getElementById('btn-settings');
@@ -477,8 +632,10 @@
         let tokenChartInstance = null;
         let currentHistoryRange = 'hr';
         let currentTokenRange = 'hr';
+        let currentBreakdownRange = 'hr';
         let historyLoading = false;
         let historyCache = {};
+        const FIXED_WINDOW_HEIGHT = 252;
 
         function formatTokenCount(n) {
             const v = Number(n) || 0;
@@ -488,9 +645,9 @@
         }
 
         function setNavIcons(mode) {
-            // mode = next destination icon to show on the cycle button
             iconSvgStats.classList.toggle('hidden', mode !== 'stats');
             iconSvgTokens.classList.toggle('hidden', mode !== 'tokens');
+            iconSvgList.classList.toggle('hidden', mode !== 'list');
             iconSvgHome.classList.toggle('hidden', mode !== 'home');
         }
 
@@ -558,21 +715,48 @@
             }
         }
 
-        function resizeWindowForView(target) {
-            let targetHeight = 320;
-            if (target === 'overview') {
-                const isSpendShown = !document.getElementById('spend-warning').classList.contains('hidden');
-                targetHeight = isSpendShown ? 280 : 235;
-            } else if (target === 'history' || target === 'tokens') {
-                targetHeight = 335;
-            } else if (target === 'settings') {
-                const guideBox = document.getElementById('cookie-guide-box');
-                const isGuideOpen = guideBox && !guideBox.classList.contains('hidden');
-                targetHeight = isGuideOpen ? 520 : 420;
+        async function loadBreakdown(range) {
+            const statusEl = document.getElementById('breakdown-status');
+            const body = document.getElementById('breakdown-body');
+            currentBreakdownRange = range || currentBreakdownRange || 'hr';
+            if (statusEl) statusEl.textContent = 'Loading per-request usage…';
+            try {
+                const res = await fetchHistory(currentBreakdownRange);
+                if (!res || res.error) {
+                    if (statusEl) statusEl.textContent = 'Breakdown error: ' + ((res && res.error) || 'unknown');
+                    body.innerHTML = `<div class="breakdown-row breakdown-cols is-empty">Could not load requests</div>`;
+                    return;
+                }
+                const rows = res.events || [];
+                if (!rows.length) {
+                    body.innerHTML = `<div class="breakdown-row breakdown-cols is-empty">No requests in this range</div>`;
+                } else {
+                    body.innerHTML = rows.map((ev) => {
+                        const model = String(ev.model || 'unknown');
+                        const total = formatTokenCount(ev.tokens || 0);
+                        const detail = `in ${formatTokenCount(ev.input || 0)} · out ${formatTokenCount(ev.output || 0)} · cache ${formatTokenCount(ev.cache || 0)}`;
+                        const day = ev.day === 'today' || ev.day === 'yesterday' ? ev.day : '';
+                        const dot = day ? `<span class="day-dot ${day}" title="${day}"></span>` : `<span class="day-dot" style="visibility:hidden"></span>`;
+                        return `<div class="breakdown-row breakdown-cols">
+                            <span class="breakdown-time">${dot}<span>${ev.time || '—'}</span></span>
+                            <div class="breakdown-model" title="${model.replace(/"/g, '&quot;')}">${model}</div>
+                            <div class="breakdown-tokens">${total}<span class="breakdown-sub">${detail}</span></div>
+                        </div>`;
+                    }).join('');
+                }
+                const total = res.totalEvents != null ? res.totalEvents : rows.length;
+                if (statusEl) {
+                    statusEl.textContent = `Live · ${total} request${total === 1 ? '' : 's'} · ${formatTokenCount(res.totalTokens || 0)} tokens`;
+                }
+            } catch (e) {
+                if (statusEl) statusEl.textContent = 'Breakdown error: ' + (e.message || e);
             }
+        }
 
+        function resizeWindowForView(target) {
+            // One compact height for all views; content scrolls inside.
             if (window.pywebview && window.pywebview.api && window.pywebview.api.resize_window) {
-                window.pywebview.api.resize_window(targetHeight);
+                window.pywebview.api.resize_window(FIXED_WINDOW_HEIGHT);
             }
         }
 
@@ -600,8 +784,8 @@
                     loadHistory(currentHistoryRange);
                 }, 10);
             } else if (target === 'tokens') {
-                setNavIcons('home');
-                btnToggleMain.title = 'View Home';
+                setNavIcons('list');
+                btnToggleMain.title = 'View Token Breakdown Usage';
                 btnToggleMain.classList.add('active-icon');
                 btnSettings.classList.remove('active-icon');
                 setTimeout(() => {
@@ -609,6 +793,12 @@
                     else tokenChartInstance.resize();
                     loadTokenHistory(currentTokenRange);
                 }, 10);
+            } else if (target === 'breakdown') {
+                setNavIcons('home');
+                btnToggleMain.title = 'View Home';
+                btnToggleMain.classList.add('active-icon');
+                btnSettings.classList.remove('active-icon');
+                setTimeout(() => loadBreakdown(currentBreakdownRange), 10);
             } else if (target === 'settings') {
                 setNavIcons('home');
                 btnToggleMain.title = 'Return to Home';
@@ -623,6 +813,7 @@
             e.stopPropagation();
             if (currentView === 'overview') switchView('history');
             else if (currentView === 'history') switchView('tokens');
+            else if (currentView === 'tokens') switchView('breakdown');
             else switchView('overview');
         };
 
@@ -722,6 +913,7 @@
                         historyCache = {};
                         if (currentView === 'history') loadHistory(currentHistoryRange);
                         if (currentView === 'tokens') loadTokenHistory(currentTokenRange);
+                        if (currentView === 'breakdown') loadBreakdown(currentBreakdownRange);
                         return;
                     } else if (res && res.error) {
                         if(debugMsg) debugMsg.textContent = 'Status: ' + res.error;
@@ -769,12 +961,15 @@
             document.getElementById('bar-grok-fill').style.width = `${grokPct}%`;
 
             const spendVal = data.onDemandSpend || 0;
-            const spendBox = document.getElementById('spend-warning');
+            const spendBox = document.getElementById('spend-panel');
+            const spendLabel = document.getElementById('spend-label');
+            document.getElementById('spend-val').textContent = `$${Number(spendVal).toFixed(2)}`;
             if (spendVal > 0) {
-                spendBox.classList.remove('hidden');
-                document.getElementById('spend-val').textContent = `$${spendVal.toFixed(2)}`;
+                spendBox.classList.remove('is-zero');
+                spendLabel.textContent = 'Additional On-Demand Spend';
             } else {
-                spendBox.classList.add('hidden');
+                spendBox.classList.add('is-zero');
+                spendLabel.textContent = 'Additional On-Demand Spend';
             }
 
             if (currentView === 'overview') {
@@ -856,7 +1051,7 @@
         });
         document.getElementById('chk-grok').addEventListener('change', (e) => {
             document.getElementById('grok-container').style.display = e.target.checked ? 'none' : 'flex';
-            if (currentView === 'overview') resizeWindowForView('overview');
+            // Home bars rebalance via flex; window height stays fixed
         });
         document.getElementById('chk-ontop').addEventListener('change', (e) => {
             if (window.pywebview && window.pywebview.api) {
@@ -967,6 +1162,7 @@
                 document.querySelectorAll(`.pill-btn[data-chart="${chart}"]`).forEach(b => b.classList.remove('active'));
                 e.target.classList.add('active');
                 if (chart === 'tokens') loadTokenHistory(range);
+                else if (chart === 'breakdown') loadBreakdown(range);
                 else loadHistory(range);
             });
         });
