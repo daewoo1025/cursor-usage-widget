@@ -124,11 +124,37 @@ def _classify_model(model_name):
     return 'other'
 
 
+def _format_hour_ampm(hour_value):
+    h = int(hour_value) % 24
+    if h == 0:
+        return '12 AM'
+    if h < 12:
+        return f'{h} AM'
+    if h == 12:
+        return '12 PM'
+    return f'{h - 12} PM'
+
+
 def _history_bucket_plan(range_key, now_local):
-    """Return (start_ms, num_buckets, bucket_ms, labels) for a history range."""
+    """Return (start_ms, end_ms, num_buckets, bucket_ms, labels) for a history range."""
     hour = 3600 * 1000
     day = 24 * hour
     now_ms = int(now_local.timestamp() * 1000)
+
+    if range_key in ('hr', 'hourly', '12h'):
+        # Last 12 clock hours, 1 bucket each
+        aligned = now_local.replace(minute=0, second=0, microsecond=0)
+        end_aligned_ms = int(aligned.timestamp() * 1000) + hour
+        n, width = 12, hour
+        start_ms = end_aligned_ms - n * width
+        labels = []
+        for i in range(n):
+            if i == n - 1:
+                labels.append('Now')
+                continue
+            dt = datetime.fromtimestamp((start_ms + i * width) / 1000.0)
+            labels.append(_format_hour_ampm(dt.hour))
+        return start_ms, max(now_ms, end_aligned_ms), n, width, labels
 
     if range_key == '24h':
         # Align to 4-hour clock boundaries so labels are clean AM/PM
@@ -143,15 +169,7 @@ def _history_bucket_plan(range_key, now_local):
                 labels.append('Now')
                 continue
             dt = datetime.fromtimestamp((start_ms + i * width) / 1000.0)
-            h = dt.hour
-            if h == 0:
-                labels.append('12 AM')
-            elif h < 12:
-                labels.append(f'{h} AM')
-            elif h == 12:
-                labels.append('12 PM')
-            else:
-                labels.append(f'{h - 12} PM')
+            labels.append(_format_hour_ampm(dt.hour))
         return start_ms, max(now_ms, end_aligned_ms), n, width, labels
 
     if range_key == '3d':
@@ -379,9 +397,11 @@ class Api:
     def get_usage_history(self, range_key='24h'):
         """Live request-history series for the Stats chart."""
         try:
-            range_key = (range_key or '24h').strip().lower()
-            if range_key not in ('24h', '3d', '15d', '30d'):
-                range_key = '24h'
+            range_key = (range_key or 'hr').strip().lower()
+            if range_key in ('hourly', '12h'):
+                range_key = 'hr'
+            if range_key not in ('hr', '24h', '3d', '15d', '30d'):
+                range_key = 'hr'
 
             cookie_headers, email, membership, err = self._resolve_auth()
             if err:
@@ -391,6 +411,7 @@ class Api:
             start_ms, end_ms, n, width, labels = _history_bucket_plan(range_key, datetime.now())
             # Fetch slightly wider than bucket window so edge events aren't missed
             fetch_start = min(start_ms, now_ms - {
+                'hr': 12 * 3600 * 1000,
                 '24h': 24 * 3600 * 1000,
                 '3d': 3 * 24 * 3600 * 1000,
                 '15d': 15 * 24 * 3600 * 1000,
@@ -402,6 +423,10 @@ class Api:
 
             cursor_counts = [0] * n
             other_counts = [0] * n
+            input_tokens = [0] * n
+            output_tokens = [0] * n
+            cache_tokens = [0] * n
+            total_token_sum = 0
 
             for ev in events:
                 try:
@@ -421,13 +446,31 @@ class Api:
                 else:
                     other_counts[idx] += 1
 
+                usage = ev.get('tokenUsage') or {}
+                try:
+                    inp = int(usage.get('inputTokens') or 0)
+                    out = int(usage.get('outputTokens') or 0)
+                    cache = int(usage.get('cacheReadTokens') or 0) + int(usage.get('cacheWriteTokens') or 0)
+                except (TypeError, ValueError):
+                    inp = out = cache = 0
+                input_tokens[idx] += inp
+                output_tokens[idx] += out
+                cache_tokens[idx] += cache
+                total_token_sum += inp + out + cache
+
             return {
                 'live': True,
                 'range': range_key,
                 'labels': labels,
                 'cursor': cursor_counts,
                 'other': other_counts,
+                'tokens': {
+                    'input': input_tokens,
+                    'output': output_tokens,
+                    'cache': cache_tokens,
+                },
                 'totalEvents': int(total or len(events)),
+                'totalTokens': int(total_token_sum),
                 'email': email,
             }
         except Exception as e:
